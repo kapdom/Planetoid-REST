@@ -1,0 +1,5 @@
+/vendor/
+/.idea/
+/public_html/template/
+/api/core/config/config.ini
+/api/core/logs/logs.txt
