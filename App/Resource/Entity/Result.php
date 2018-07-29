@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Models;
+namespace App\Resource\Entity;
 
 use App\Core\CustomInterface\IModel;
 
-class Result extends Model implements IModel
+class Result implements IModel
 {
     public $userId;
     public $levelId;
@@ -13,7 +13,10 @@ class Result extends Model implements IModel
     public $playDate;
     public $userName;
 
-    public function setData($statsData)
+    /**
+     * @param array $statsData
+     */
+    public function setData(array $statsData)
     {
         $this->userId = $statsData['user_id'] ?? null;
         $this->levelId = $statsData['level_id'] ?? null;

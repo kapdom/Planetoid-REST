@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Models;
+namespace App\Resource\Entity;
 
 use App\Core\CustomInterface\IModel;
 
-class User extends Model implements IModel
+class User implements IModel
 {
     public $id;
     public $deviceModel;
@@ -12,7 +12,10 @@ class User extends Model implements IModel
     public $regDate;
     public $lastLogDate;
 
-    public function setData($userData)
+    /**
+     * @param array $userData
+     */
+    public function setData(array $userData)
     {
         $this->id = $userData['id'] ?? null;
         $this->deviceModel = $userData['device_model'] ?? null;

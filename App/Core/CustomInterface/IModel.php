@@ -15,5 +15,5 @@ namespace App\Core\CustomInterface;
  */
 Interface IModel
 {
-    public function setData($data);
+    public function setData(array $data);
 }

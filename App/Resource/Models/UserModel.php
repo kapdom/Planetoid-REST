@@ -6,24 +6,33 @@
  * Time: 20:06
  */
 
-namespace App\Http\db;
+namespace App\Resource\Models;
 
 
 use App\Core\DB\DB;
+use App\Core\Traits\EntityParser;
 use PDO;
 use PDOException;
 use App\Core\Services\LogService;
 use App\Core\View\View;
 
-class UserDb extends DB
+class UserModel extends DB
 {
+
+    use EntityParser;
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
     /**
      * Save ne user in db
      *
      * @param array $userData
      * @return int
      */
-    public static function saveNewUser(array $userData):int
+    public function saveNewUser(array $userData): int
     {
         //check if device is already registered in db
         //if is return user id
@@ -34,13 +43,13 @@ class UserDb extends DB
         }
 
         try {
-            $sendData = self::$db->prepare("INSERT INTO users (id, device_id, device_model, device_os, registration_date, last_login_date)
+            $sendData = $this->db->prepare("INSERT INTO users (id, device_id, device_model, device_os, registration_date, last_login_date)
                                         VALUES (NULL, :deviceID, :deviceModel, :deviceOS,CURRENT_TIME,CURRENT_TIME)");
             $sendData->bindValue(':deviceID', $userData['device_id'], PDO::PARAM_STR);
             $sendData->bindValue(':deviceModel', $userData['device_model'], PDO::PARAM_STR);
             $sendData->bindValue(':deviceOS', $userData['device_os'], PDO::PARAM_STR);
             $sendData->execute();
-            return self::$db->lastInsertId();
+            return $this->db->lastInsertId();
 
         }catch (PDOException $e){
             LogService::addLog(3,$e->getMessage());
@@ -55,10 +64,10 @@ class UserDb extends DB
      * @param string $deviceId
      * @return int
      */
-    private static function getUserId(string $deviceId):int
+    private function getUserId(string $deviceId): int
     {
         try {
-            $getData = self::$db->prepare("SELECT id FROM users WHERE device_id=:deviceID");
+            $getData = $this->db->prepare("SELECT id FROM users WHERE device_id=:deviceID");
             $getData->bindValue(':deviceID', $deviceId, PDO::PARAM_STR);
             $getData->execute();
 
@@ -81,10 +90,10 @@ class UserDb extends DB
      * @param int $userId
      * @return int
      */
-    public static function updateUserLoginTime(int $userId):int
+    public function updateUserLoginTime(int $userId): int
     {
         try {
-            $updateData = self::$db->prepare("UPDATE users SET last_login_date=CURRENT_TIME WHERE id=$userId");
+            $updateData = $this->db->prepare("UPDATE users SET last_login_date=CURRENT_TIME WHERE id=$userId");
             $updateData->execute();
             $success = $updateData->rowCount() == 1 ? true: false;
             $updateData->closeCursor();
@@ -105,18 +114,18 @@ class UserDb extends DB
      * @param array $request
      * @return int
      */
-    public static function updateLevelResult(int $userId, array $request):int
+    public function updateLevelResult(int $userId, array $request): int
     {
         try {
             //check if result with specific user id and level id exist
             //update record if true
             //create new record if false
             if (self::checkIfResultExist($userId, $request['levelId'])) {
-                $updateData = self::$db->prepare("UPDATE levels_results SET result=:result, fps=:fps, created_at=CURRENT_TIME WHERE user_id=:userId AND level_id=:levelId ");
+                $updateData = $this->db->prepare("UPDATE levels_results SET result=:result, fps=:fps, created_at=CURRENT_TIME WHERE user_id=:userId AND level_id=:levelId ");
 
             } else {
 
-                $updateData = self::$db->prepare("INSERT INTO levels_results (id, user_id, level_id, result, fps) 
+                $updateData = $this->db->prepare("INSERT INTO levels_results (id, user_id, level_id, result, fps) 
                                                   VALUES(NULL, :userId, :levelId, :result, :fps)");
             }
 
@@ -143,10 +152,10 @@ class UserDb extends DB
      * @param int $levelId
      * @return bool
      */
-    private static function checkIfResultExist(int $userId, int $levelId):bool
+    private function checkIfResultExist(int $userId, int $levelId): bool
     {
         try {
-            $selectData = self::$db->prepare("SELECT user_id FROM levels_results WHERE user_id=:userId AND level_id=:levelId");
+            $selectData = $this->db->prepare("SELECT user_id FROM levels_results WHERE user_id=:userId AND level_id=:levelId");
             $selectData->bindValue('userId', $userId, PDO::PARAM_INT);
             $selectData->bindValue('levelId', $levelId, PDO::PARAM_INT);
             $selectData->execute();
@@ -162,14 +171,21 @@ class UserDb extends DB
         }
     }
 
-    public static function getSingleUserLevelResult($userId,$levelId)
+    /**
+     * Get single level result for specific user
+     *
+     * @param int $userId
+     * @param int $levelId
+     * @return array
+     */
+    public function getSingleUserLevelResult(int $userId, int $levelId): array
     {
         try {
-            $selectData = self::$db->prepare("SELECT * FROM levels_results LEFT JOIN users ON users.id=levels_results.user_id WHERE levels_results.level_id=$levelId AND levels_results.user_id=$userId");
+            $selectData = $this->db->prepare("SELECT * FROM levels_results LEFT JOIN users ON users.id=levels_results.user_id WHERE levels_results.level_id=$levelId AND levels_results.user_id=$userId");
             $selectData->bindValue('userId', $userId, PDO::PARAM_INT);
             $selectData->bindValue('levelId', $levelId, PDO::PARAM_INT);
             $selectData->execute();
-            self::$fetchedData = $selectData->fetchAll(PDO::FETCH_ASSOC);
+            $this->fetchedData = $selectData->fetchAll(PDO::FETCH_ASSOC);
 
         }catch(PDOException $e){
             LogService::addLog(3,$e->getMessage());
@@ -177,6 +193,6 @@ class UserDb extends DB
             die();
         }
 
-        return self::$fetchedData;
+        return $this->fetchedData;
     }
 }

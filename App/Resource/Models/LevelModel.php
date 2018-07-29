@@ -6,26 +6,40 @@
  * Time: 10:47
  */
 
-namespace App\Http\Db;
+namespace App\Resource\Models;
 
 use App\Core\DB\DB;
+use App\Core\Traits\EntityParser;
 use PDO;
 use PDOException;
 use App\Core\Services\LogService;
 use App\Core\View\View;
 
-class LevelDb extends DB
+class LevelModel extends DB
 {
-    public static function addNewLevelData(array $levelData)
+    use EntityParser;
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    /**
+     * Store new level data
+     *
+     * @param array $levelData
+     * @return int
+     */
+    public function addNewLevelData(array $levelData): int
     {
         try {
-            $sendData = self::$db->prepare("INSERT INTO levels (id, one_star, two_star, three_star)
+            $sendData = $this->db->prepare("INSERT INTO levels (id, one_star, two_star, three_star)
                                         VALUES (NULL, :oneStar, :twoStar, :threeStar)");
             $sendData->bindValue(':oneStar', $levelData['one_star'], PDO::PARAM_STR);
             $sendData->bindValue(':twoStar', $levelData['two_star'], PDO::PARAM_STR);
             $sendData->bindValue(':threeStar', $levelData['three_star'], PDO::PARAM_STR);
             $sendData->execute();
-            return self::$db->lastInsertId();
+            return $this->db->lastInsertId();
 
         }catch (PDOException $e){
             LogService::addLog(3,$e->getMessage());

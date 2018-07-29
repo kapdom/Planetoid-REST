@@ -11,6 +11,7 @@ namespace App\Core\Router;
 use App\Core\Request\Request;
 use App\Core\Services\LogService;
 use App\Core\View\View;
+use App\Core\Response\Response;
 
 class Router
 {
@@ -42,12 +43,20 @@ class Router
     /**
      * @var string Controller Namespace
      */
-    private static $controllerNamespace = 'App\Http\Controllers';
+    private $controllerNamespace = 'App\Resource\Controllers';
 
     /**
      * @var array Current registered router matched to input url
      */
-    private static $matchedRoute = [];
+    private $matchedRoute = [];
+
+    /**
+     * Router constructor.
+     */
+    public function __construct()
+    {
+        $this->matchUrl();
+    }
 
     /**
      * Register GET route
@@ -97,10 +106,11 @@ class Router
      * @param Request $request
      * @return object
      */
-    public static function loadClass(string $name, Request $request): object
+    public function loadClass(string $name, Request $request): object
     {
-        $class = self::$controllerNamespace.'\\'.$name;
-        return new $class($request);
+        $response = new Response();
+        $class = $this->controllerNamespace.'\\'.$name;
+        return new $class($request,$response);
     }
 
     /**
@@ -126,7 +136,7 @@ class Router
      * @param array $routes routes in current request method
      * @return array|null
      */
-    private static function checkRegisteredRouters(array $routes): ?array
+    private function checkRegisteredRouters(array $routes): ?array
     {
         foreach ($routes as $route){
             $uri = str_replace(['/','?'],['\/','[0-9a-zA-Z]*'],$route['uri']);
@@ -142,14 +152,14 @@ class Router
     /**
      * Check input url
      */
-    public static function matchUrl(): void
+    public function matchUrl(): void
     {
         try {
             self::$url = trim($_SERVER['REQUEST_URI'], '/');
-            self::$matchedRoute = self::checkRegisteredRouters(self::requestType());
+            $this->matchedRoute = $this->checkRegisteredRouters($this->requestType());
 
-            if (self::$matchedRoute != null) {
-                self::launchController();
+            if ($this->matchedRoute != null) {
+                $this->launchController();
             } else {
                 View::abort(404, 'No Controller');
             }
@@ -161,13 +171,13 @@ class Router
     /**
      * Launch controller and pass arguments to selected controller method
      */
-    private static function launchController(): void
+    private function launchController(): void
     {
         try {
             $request = new Request();
-            $method = self::$matchedRoute['method'];
-            $class = self::loadClass(self::$matchedRoute['controller'], $request);
-            $methodParameters = $request->parseGetData(self::$matchedRoute['uri']);
+            $method = $this->matchedRoute['method'];
+            $class = $this->loadClass($this->matchedRoute['controller'], $request);
+            $methodParameters = $request->parseGetData($this->matchedRoute['uri']);
             $class->$method(...$methodParameters);
         }catch (\Exception $e){
             LogService::addLog(1,$e->getMessage());
@@ -180,9 +190,12 @@ class Router
      * @return array
      * @throws \Exception
      */
-    private static function requestType(): array
+    private function requestType(): array
     {
-        switch ($_SERVER['REQUEST_METHOD']) {
+        $request = new Request();
+        $request->requestMethod;
+
+        switch ($request->requestMethod) {
             case 'GET':
                return self::$getRoutes;
                 break;

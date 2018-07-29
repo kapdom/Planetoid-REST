@@ -11,10 +11,7 @@ header("Access-Control-Allow-Methods: POST,GET,PUT,DELETE");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-use Api\Core\Bootstrap\Bootstrap;
-
 define('PATH',str_replace("\\","/",dirname(__FILE__)).'/');
 require("../vendor/autoload.php");
 
-$boot = new Bootstrap();
-$boot->start();
+require ("../App/Core/Bootstrap.php");

@@ -19,39 +19,38 @@ class DB
     /**
      * @var PDO fetched data
      */
-    protected static $fetchedData;
+    protected $fetchedData;
 
     /**
      * PDO object
      *
      * @var object
      */
-    protected static $db;
-
+    protected $db;
 
     /**
      * Path to db configuration file
      *
      * @var string
      */
-    private static $configFile = PATH.'../app/core/config/config.ini';
+    private $configFile = PATH.'../app/core/config/config.ini';
 
     /**
      * Create PDO object to db connection
      *
      * @throws Exception if file doesn't exist
      */
-    public static function initialize()
+    public function __construct()
     {
         try {
-            if (!is_file(self::$configFile)) {
-                throw new Exception("No File: ".self::$configFile);
+            if (!is_file($this->configFile)) {
+                throw new Exception("No File: ".$this->configFile);
             } else {
-                $config = parse_ini_file(self::$configFile, true);
+                $config = parse_ini_file($this->configFile, true);
             }
 
-            self::$db = new PDO($config['db']['driver'] . 'dbname=' . $config['db']['db_name'] . ';host=' . $config['db']['host'], $config['db']['user'], $config['db']['password']);
-            self::$db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $this->db = new PDO($config['db']['driver'] . 'dbname=' . $config['db']['db_name'] . ';host=' . $config['db']['host'], $config['db']['user'], $config['db']['password']);
+            $this->db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException | Exception $e) {
             LogService::addLog(3,$e->getMessage());
             View::abort(500,"Internal Server Problem");
@@ -64,11 +63,11 @@ class DB
      * @param string $table
      * @return array
      */
-    public static function getAllRecords(string $table):array
+    public function getAllRecords(string $table): array
     {
         try {
-            $getData = self::$db->query("SELECT * FROM $table");
-            self::$fetchedData = $getData->fetchAll();
+            $getData = $this->db->query("SELECT * FROM $table");
+            $this->fetchedData = $getData->fetchAll();
 
         } catch (PDOException $e) {
             LogService::addLog(3,$e->getMessage());
@@ -76,7 +75,7 @@ class DB
             die();
         }
 
-        return self::$fetchedData;
+        return $this->fetchedData;
     }
 
     /**
@@ -85,23 +84,23 @@ class DB
      * @param string $value
      * @return array
      */
-    public static function getSingleRecord(string $table, string $column, string $value ):array
+    public function getSingleRecord(string $table, string $column, string $value ): array
     {
         try {
-            $getData = self::$db->prepare("SELECT * FROM $table WHERE $column = :VALUE");
+            $getData = $this->db->prepare("SELECT * FROM $table WHERE $column = :VALUE");
             $getData->bindValue(':VALUE', $value, self::getTypeOpValue($table));
             $getData->execute();
-            self::$fetchedData = $getData->fetchAll();
+            $this->fetchedData = $getData->fetchAll();
 
         } catch (PDOException $e) {
             LogService::addLog(3,$e->getMessage());
             View::abort(500,"Internal Data Base Problem");
             die();
         }
-        return self::$fetchedData;
+        return $this->fetchedData;
     }
 
-    private static function getTypeOpValue($value)
+    private function getTypeOpValue($value): int
     {
         $type = gettype($value);
         switch($type){
